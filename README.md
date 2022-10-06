@@ -8,14 +8,14 @@
 ## Usage
 
 ```sh
-python main.py filename.txt
+python main.py
 ```
 
 ## Author
 
 👤 **BlackSnowDot**
 
-* Github: [@InvalidAccount69](https://github.com/InvalidAccount69)
+* Github: [@BlackSnowDot](https://github.com/BlackSnowDot)
 
 ## 🤝 Contributing
 
