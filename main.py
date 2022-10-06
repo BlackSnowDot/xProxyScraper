@@ -1,16 +1,14 @@
-import os
-import sys
-import re
-import requests
+import os, re
+from requests import get
+from json import load
 
 class xProxyScraper():
     def __init__(self) -> None:
         self.version = "1.0"
         self.dateRegex = "[0-9]{4}-[0-9]{2}-[0-9]{2}"
         self.proxyRegex = r"\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])\.){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\b:[0-9]?[0-9]?[0-9]?[0-9]"
-        self.dates = []
-        self.proxies = []
-        self.dup = []
+        self.dates, self.proxies = [], []
+        self.config = load(open("config.json"))
     
     def banner(self):
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -28,35 +26,24 @@ class xProxyScraper():
     def getDates(self):
         request = requests.get("https://checkerproxy.net/api/archive/")
         if request.status_code == 200:
-            for date in re.findall(self.dateRegex, str(request.json()), re.RegexFlag.MULTILINE):
+            for date in re.findall(self.dateRegex, str(request.json()),
+                                   re.RegexFlag.MULTILINE):
                 self.dates.append(date)
         return self.dates
 
-    def duplicateremove(self):
-        with open(sys.argv[1], "r+") as f:
-            self.dup = [x.strip() for x in f.readlines()]
-        data = set(self.dup)
-        current_data = len(data)
-        with open(sys.argv[1], "w+") as f:
-            f.write("\n".join(data))
-        print("Done, Scraped %s Proxy" % current_data)
-
     def start(self):
-        print(self.banner())
-        if len(sys.argv) < 2:
-            exit(f"Usage: {os.path.basename(__file__)} output.txt")
+        global amount
         for date in self.getDates():
             request = requests.get("https://checkerproxy.net/api/archive/" + date)
-            print(f"Getting proxies from {request.url}")
-            for proxy in re.finditer(self.proxyRegex, str(request.json()), re.RegexFlag.MULTILINE):
+            print(f"[+] {request.url}" if request.status_code == 200 else f"[-] {request.url}")
+            for proxy in re.finditer(self.proxyRegex, str(request.json()),
+                                     re.RegexFlag.MULTILINE):
                 self.proxies.append(proxy.group())
-                print("Founded: %s" % len(self.proxies), end="\r")
-                
-        with open(sys.argv[1], "a+") as file:
-            for proxy in self.proxies:
-                file.write(f"{proxy}\n")
-        print("Removing Duplicates...")
-        self.duplicateremove()
+
+        data = set(self.proxies)
+        amount = len(data)
+        open(self.config['output-File'], "w").write("\n".join(data))
+        print(f"Done! {amount} Proxy Found")
 
 
 if __name__ == "__main__":
